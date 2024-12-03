@@ -1,69 +1,50 @@
-const jsonServer = require("json-server");
+const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
-const multer = require("multer");
-const express = require("express");
-const server = jsonServer.create();
-const router = jsonServer.router("data.json");
-const middlewares = jsonServer.defaults();
 
-const uploadFolder = path.join(__dirname, "Olympia images");
+// Skapa en Express-app
+const app = express();
 
+// Middleware
+app.use(cors()); // Tillåt CORS från alla domäner
+app.use(express.json()); // Tillåt servern att läsa JSON-data i begäran
+app.use(express.static("public")); // Tillåt statiska filer (t.ex. bilder)
+
+const uploadFolder = path.join(__dirname, "Olympia_images");
+
+// Se till att uppladdningsmappen finns
 if (!fs.existsSync(uploadFolder)) {
   fs.mkdirSync(uploadFolder);
 }
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadFolder);
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
+// Route för att hantera bilduppladdning (Base64-sträng)
+app.post("/uploadImage", (req, res) => {
+  const { image } = req.body; // Hämta Base64-strängen från body
 
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024,
-  },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Invalid file type"));
-    }
-  },
-});
-
-server.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
-
-server.use(
-  cors({
-    origin: "https://elliotabrahamsson.github.io",
-  })
-);
-
-server.use(middlewares);
-server.use(router);
-
-server.post("/uploadImage", upload.single("picture"), (req, res) => {
-  console.log("upload endpoint hit");
-  if (!req.file) {
-    return res.status(400).json({ error: "No file uploaded" });
+  if (!image) {
+    return res.status(400).json({ error: "Ingen bild skickades" });
   }
 
-  const imageURL = `https://json-server-7x9n.onrender.com/Olympia%20images/${req.file.filename}`;
-  res.status(200).json({ imageURL });
+  // Generera ett unikt filnamn för varje uppladdad bild
+  const filename = `${Date.now()}.png`; // Här kan du ändra på extension beroende på bildens format
+  const filePath = path.join(uploadFolder, filename);
+
+  // Skriv Base64-bilden till en fil
+  const base64Data = image.replace(/^data:image\/png;base64,/, ""); // Rensa bort prefixet
+  fs.writeFile(filePath, base64Data, "base64", (err) => {
+    if (err) {
+      return res.status(500).json({ error: "Fel vid uppladdning av bild" });
+    }
+
+    // Returnera URL till den uppladdade bilden
+    const imageUrl = `/Olympia_images/${filename}`;
+    res.status(200).json({ message: "Bild uppladdad!", imageUrl });
+  });
 });
 
-server.use("/Olympia images", express.static(uploadFolder));
-
-const port = process.env.PORT || 10000;
-server.listen(port, () => {
-  console.log(`JSON Server is running on http://localhost:${port}`);
+// Starta servern
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Servern körs på http://localhost:${port}`);
 });
