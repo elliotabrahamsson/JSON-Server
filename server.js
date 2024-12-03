@@ -2,6 +2,7 @@ const jsonServer = require("json-server");
 const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
+const express = require("express");
 const server = jsonServer.create();
 const router = jsonServer.router("data.json");
 const middlewares = jsonServer.defaults();
@@ -38,7 +39,7 @@ server.post("/uploadImage", upload.single("picture"), (req, res) => {
   res.json({ imageUrl });
 });
 
-server.use("/Olympia Images", jsonServer.static(uploadFolder));
+server.use("/Olympia Images", express.static(uploadFolder));
 
 const port = process.env.PORT || 3000;
 server.listen(port, () => {
