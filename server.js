@@ -45,7 +45,7 @@ server.post("/uploadImage", upload.single("picture"), (req, res) => {
     return res.status(400).json({ error: "No file uploaded" });
   }
 
-  const imageURL = `/Olympia images/${req.file.filename}`;
+  const imageURL = `https://json-server-7x9n.onrender.com/Olympia%20images/${req.file.filename}`;
   res.status(200).json({ imageURL });
 });
 
