@@ -41,13 +41,12 @@ server.use(router);
 
 server.post("/uploadImage", upload.single("picture"), (req, res) => {
   console.log("upload endpoint hit");
-  next();
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" });
   }
 
-  const imageURL = `/Olympia%20images/${req.file.filename}`;
-  res.json({ imageURL });
+  const imageURL = `/Olympia images/${req.file.filename}`;
+  res.status(200).json({ imageURL });
 });
 
 server.use("/Olympia images", express.static(uploadFolder));
