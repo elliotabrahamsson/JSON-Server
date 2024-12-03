@@ -40,6 +40,8 @@ server.use(middlewares);
 server.use(router);
 
 server.post("/uploadImage", upload.single("picture"), (req, res) => {
+  console.log("upload endpoint hit");
+  next();
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" });
   }
