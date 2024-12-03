@@ -4,11 +4,13 @@ const server = jsonServer.create();
 const router = jsonServer.router("data.json");
 const middlewares = jsonServer.defaults();
 
-server.use(
-  cors({
-    origin: "https://elliotabrahamsson.github.io",
-  })
-);
+server.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+cors({
+  origin: "https://elliotabrahamsson.github.io",
+});
 server.use(middlewares);
 server.use(router);
 
