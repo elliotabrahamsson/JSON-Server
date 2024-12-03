@@ -1,7 +1,8 @@
 const jsonServer = require("json-server");
 const cors = require("cors");
-const multer = require("multer");
+const fs = require("fs");
 const path = require("path");
+const multer = require("multer");
 const express = require("express");
 const server = jsonServer.create();
 const router = jsonServer.router("data.json");
@@ -9,34 +10,42 @@ const middlewares = jsonServer.defaults();
 
 const uploadFolder = path.join(__dirname, "Olympia Images");
 
+if (!fs.existsSync(uploadFolder)) {
+  fs.mkdirSync(uploadFolder);
+}
+
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: function (req, file, cb) {
     cb(null, uploadFolder);
   },
-  filename: (req, file, cb) => {
+  filename: function (req, file, cb) {
     cb(null, Date.now() + path.extname(file.originalname));
   },
 });
 
 const upload = multer({ storage: storage });
 
-server.use(cors({ origin: "https://elliotabrahamsson.github.io" }));
-
 server.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
+
+server.use(
+  cors({
+    origin: "https://elliotabrahamsson.github.io",
+  })
+);
 
 server.use(middlewares);
 server.use(router);
 
 server.post("/uploadImage", upload.single("picture"), (req, res) => {
   if (!req.file) {
-    return res.status(400).send("Ingen fil uppladdad.");
+    return res.status(400).json({ error: "No file uploaded" });
   }
 
-  const imageUrl = `/Olympia Images/${req.file.filename}`;
-  res.json({ imageUrl });
+  const imageURL = `/Olympia%20Images/${req.file.filename}`;
+  res.json({ imageURL });
 });
 
 server.use("/Olympia Images", express.static(uploadFolder));
