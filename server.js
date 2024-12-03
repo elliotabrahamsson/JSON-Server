@@ -8,7 +8,7 @@ const server = jsonServer.create();
 const router = jsonServer.router("data.json");
 const middlewares = jsonServer.defaults();
 
-const uploadFolder = path.join(__dirname, "Olympia Images");
+const uploadFolder = path.join(__dirname, "Olympia images");
 
 if (!fs.existsSync(uploadFolder)) {
   fs.mkdirSync(uploadFolder);
@@ -44,11 +44,11 @@ server.post("/uploadImage", upload.single("picture"), (req, res) => {
     return res.status(400).json({ error: "No file uploaded" });
   }
 
-  const imageURL = `/Olympia%20Images/${req.file.filename}`;
+  const imageURL = `/Olympia%20images/${req.file.filename}`;
   res.json({ imageURL });
 });
 
-server.use("/Olympia Images", express.static(uploadFolder));
+server.use("/Olympia images", express.static(uploadFolder));
 
 const port = process.env.PORT || 3000;
 server.listen(port, () => {
