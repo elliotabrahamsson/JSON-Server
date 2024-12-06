@@ -27,7 +27,7 @@ app.post("/uploadImage", (req, res) => {
   }
 
   // Generera ett unikt filnamn för varje uppladdad bild
-  const filename = `${Date.now()}.png`; // Här kan du ändra på extension beroende på bildens format
+  const filename = `${Date.now()}.png || .jpg || .jpeg`; // Här kan du ändra på extension beroende på bildens format
   const filePath = path.join(uploadFolder, filename);
 
   // Skriv Base64-bilden till en fil
