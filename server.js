@@ -1,56 +1,48 @@
-const jsonServer = require("json-server");
-const cors = require("cors");
-const fs = require("fs");
-const path = require("path");
-const multer = require("multer");
 const express = require("express");
-const server = jsonServer.create();
-const router = jsonServer.router("data.json");
-const middlewares = jsonServer.defaults();
+const cors = require("cors");
+const multer = require("multer");
+const AWS = require("aws-sdk");
+const path = require("path");
 
-const uploadFolder = path.join(__dirname, "Olympia images");
+const app = express();
+app.use(cors());
 
-if (!fs.existsSync(uploadFolder)) {
-  fs.mkdirSync(uploadFolder);
-}
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadFolder);
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: "Europe (Stockholm) eu-north-1",
 });
 
-const upload = multer({ storage: storage });
+const s3 = new AWS.S3();
 
-server.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
+const upload = multer({ storage: multer.memoryStorage() });
 
-server.use(
-  cors({
-    origin: "https://elliotabrahamsson.github.io",
-  })
-);
-
-server.use(middlewares);
-server.use(router);
-
-server.post("/uploadImage", upload.single("picture"), (req, res) => {
+app.post("/upload", upload.single("picture"), async (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ error: "No file uploaded" });
+    return res.status(400).send("No file uploaded.");
   }
 
-  const imageURL = `/Olympia%20images/${req.file.filename}`;
-  res.json({ imageURL });
+  const fileName = Date.now() + path.extname(req.file.originalname);
+  const s3Params = {
+    Bucket: "olympia-server",
+    Key: `Olympia images/${fileName}`,
+    Body: req.file.buffer,
+    ContentType: req.file.mimetype,
+    ACL: "public-read",
+  };
+
+  try {
+    const uploadResult = await s3.upload(s3Params).promise();
+    console.log("Uppladdad", uploadResult.Location);
+
+    res.status(200).json({ imageURL: uploadResult.Location });
+  } catch (error) {
+    console.error("Fel vid uppladdning till S3", error);
+    res.status(500).json({ error: "Kunde inte ladda upp bilden" });
+  }
 });
 
-server.use("/Olympia images", express.static(uploadFolder));
-
 const port = process.env.PORT || 3000;
-server.listen(port, () => {
-  console.log(`JSON Server is running on http://localhost:${port}`);
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
